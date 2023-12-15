@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/main.css">
+    <title>Voting System</title>
+</head>
+<body>
+<form id="addCandidateForm">
+    <input type="text" id="candidateName" placeholder="Enter candidate name" required>
+    <input type="submit" value="Add Candidate">
+</form>
+
+<!-- Add username input field -->
+<input type="text" id="username" placeholder="Enter username" required>
+
+<table id="candidatesTable">
+    <!-- Table content will be dynamically populated here -->
+</table>
+
+<script>
+    document.getElementById("addCandidateForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        addCandidate();
+    });
+
+    function addCandidate() {
+        var candidateName = document.getElementById("candidateName").value;
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                // Update the table content after adding a candidate
+                document.getElementById("candidatesTable").innerHTML = this.responseText;
+            }
+        };
+
+        xhttp.open("POST", "voteSystem", true);
+        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhttp.send("action=addCandidate&candidateName=" + encodeURIComponent(candidateName));
+    }
+
+    function deleteCandidate(candidateName) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                // Update the table content after deleting a candidate
+                document.getElementById("candidatesTable").innerHTML = this.responseText;
+            }
+        };
+
+        xhttp.open("POST", "voteSystem", true);
+        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhttp.send("action=delete&candidateName=" + encodeURIComponent(candidateName));
+    }
+
+    function vote(candidateName) {
+        var username = document.getElementById("username").value; // Get the username value
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                // Update the table content after voting
+                document.getElementById("candidatesTable").innerHTML = this.responseText;
+            }
+        };
+
+        xhttp.open("POST", "voteSystem", true);
+        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhttp.send("action=vote&candidateName=" + encodeURIComponent(candidateName) + "&username=" + encodeURIComponent(username));
+    }
+
+    // Function to load the initial table content
+    function getTable() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                document.getElementById("candidatesTable").innerHTML = this.responseText;
+            }
+        };
+
+        xhttp.open("GET", "voteSystem", true);
+        xhttp.send();
+    }
+
+    // Load the initial table content when the page loads
+    window.onload = function() {
+        getTable();
+    };
+</script>
+</body>
+</html>

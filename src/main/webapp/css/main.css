@@ -1,0 +1,22 @@
+body {
+    color: whitesmoke;
+    background-color: #222;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: column;
+}
+
+table, td, th, tr {
+    border-collapse: collapse;
+    border: 1px white solid;
+    padding: 5px;
+    margin: 2rem;
+}
+
+.buttons {
+    display: flex;
+    width:50%;
+    justify-content: center;
+    align-items: center;
+}
