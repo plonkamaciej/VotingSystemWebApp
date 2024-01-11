@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
  */
 public class VoteSystemModelList {
 
+    private static VoteSystemModelList instance;
     /**
      * List of candidates
      */
@@ -27,6 +28,14 @@ public class VoteSystemModelList {
     /**
      * constructor when no candidate is specified
      */
+
+    public static synchronized VoteSystemModelList getInstance() {
+        if (instance == null) {
+            instance = new VoteSystemModelList();
+        }
+        return instance;
+    }
+
     public VoteSystemModelList() {
 
         this.CandidateList = new ArrayList<>();

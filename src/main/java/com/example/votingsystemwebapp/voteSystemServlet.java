@@ -8,18 +8,17 @@ package com.example.votingsystemwebapp;/*
 import Model.VoteSystemModel;
 import ModelList.VoteSystemModelList;
 import fileMenager.FileManager;
+import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
 import static fileMenager.FileManager.Reader;
-
 
 /**
  *
@@ -28,46 +27,42 @@ import static fileMenager.FileManager.Reader;
 public class voteSystemServlet extends HttpServlet {
 
     private VoteSystemModelList modelList;
+    private static final long serialVersionUID = 1L;
+
 
     @Override
-    public void init() {
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
         File candidateFile = FileManager.getCandidateFile();
-        modelList = retrieveFromDatabase(candidateFile);
-    }
-
-    protected void addCandidate(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String candidateName = request.getParameter("candidateName");
-        VoteSystemModel newCandidate = new VoteSystemModel(candidateName, 0);
-        modelList.addVoteSystemModelList(newCandidate);
-        modelList.printToFile();
+        modelList = VoteSystemModelList.getInstance();
+        retrieveFromDatabase(candidateFile);
     }
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         PrintWriter out = response.getWriter();
         for (VoteSystemModel candidate : modelList.getCandidateList()) {
-            out.println("<tr>");
-            out.println("<td>");
-            out.println(candidate.getName());
-            out.println("</td>");
-            out.println("<td>");
-            out.println(candidate.getVoteCount());
-            out.println("</td>");
-            out.println("<td>");
-            out.println("<button onclick=\"deleteCandidate('" + candidate.getName() + "')\">Delete</button>");
-            out.println("<button onclick=\"vote('" + candidate.getName() + "')\">Vote</button>");
+
+            out.println("<tr class='align-items-center'>");
+            out.println("<td class='align-middle'>" + candidate.getName() + "</td>");
+            out.println("<td class='align-middle'>" + candidate.getVoteCount() + "</td>");
+            out.println("<td class='align-middle'>");
+            out.println("<button class='btn btn-danger' onclick=\"deleteCandidate('" + candidate.getName() + "')\">Delete</button>");
+            out.println("<button class='btn btn-success' onclick=\"vote('" + candidate.getName() + "')\">Vote</button>");
             out.println("</td>");
             out.println("</tr>");
+
         }
+
     }
 
-    private static VoteSystemModelList retrieveFromDatabase(File candidateFile) {
-        VoteSystemModelList candidateList = new VoteSystemModelList();
+    private static void retrieveFromDatabase(File candidateFile) {
+        VoteSystemModelList candidateList = VoteSystemModelList.getInstance();
         List<List<String>> Candidates = Reader(candidateFile);
         for (List<String> s : Candidates) {
             candidateList.addVoteSystemModelList(new VoteSystemModel(s.get(0), Integer.parseInt(s.get(1))));
         }
-        return candidateList;
+
     }
 
     @Override
@@ -79,9 +74,7 @@ public class voteSystemServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
 
-        if ("addCandidate".equals(action)) {
-            addCandidate(request, response);
-        } else if ("delete".equals(action)) {
+        if ("delete".equals(action)) {
             deleteCandidate(request, response);
         } else if ("vote".equals(action)) {
             vote(request, response);
@@ -94,22 +87,36 @@ public class voteSystemServlet extends HttpServlet {
         String candidateName = request.getParameter("candidateName");
         String username = request.getParameter("username");
 
-        if (username.equals("test")){
-            return;
+        if (candidateName == null || username == null || candidateName.isEmpty() || username.isEmpty()) {
+            throw new IllegalArgumentException("Invalid input data");
         }
 
-        modelList.voteByName(candidateName);
-        modelList.printToFile();
+        HttpSession session = request.getSession(true);
+
+        List<List<String>> users = FileManager.Reader(FileManager.getUserFile());
+
+        if(!verifyUser(username, users)) {
+            modelList.voteByName(candidateName);
+            modelList.printToFile();
+        }
+        else {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            session.setAttribute("exceptionMessage", "You have already voted. Each user is allowed to vote only once.");
+        }
+
+        // Set a cookie with the last voted username
+        Cookie lastVotedUsernameCookie = new Cookie("lastVotedUsername", username);
+        response.addCookie(lastVotedUsernameCookie);
+
+        session.setAttribute("lastVotedCandidate", candidateName);
         processRequest(request, response);
+
     }
 
     private void deleteCandidate(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         String candidateName = request.getParameter("candidateName");
 
 
-        // Add logic to remove the candidate from the modelList
-        // For example, assuming modelList.removeCandidateByName(candidateName) method
-        // Update this based on your actual modelList implementation
         modelList.delateCandidateByName(candidateName);
 
         // Save the updated list to the file
@@ -124,4 +131,31 @@ public class voteSystemServlet extends HttpServlet {
     public String getServletInfo() {
         return "Vote System Servlet";
     }
+
+    public static boolean verifyUser(String user, List<List<String>> users) {
+        if(findUser(user, users)){
+            System.out.println("You have already voted");
+            return true;
+        }
+        else {
+            try {
+                FileManager.addToFile(user, FileManager.getUserFile());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
+
+    public static boolean findUser(String user, List<List<String>> users){
+        boolean found = false;
+        for (List<String> innerList : users) {
+            if (innerList.contains(user)) {
+                found =  true;
+                break;
+            }
+        }
+        return found;
+    }
+
 }

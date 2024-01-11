@@ -3,43 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <title>Voting System</title>
 </head>
-<body>
-<form id="addCandidateForm">
-    <input type="text" id="candidateName" placeholder="Enter candidate name" required>
-    <input type="submit" value="Add Candidate">
-</form>
 
-<!-- Add username input field -->
-<input type="text" id="username" placeholder="Enter username" required>
+<body class="container mt-4">
 
-<table id="candidatesTable">
+
+<div class="input-group mb-3">
+    <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+    <div class="input-group-append">
+    </div>
+</div>
+
+<table id="candidatesTable" class="table">
     <!-- Table content will be dynamically populated here -->
 </table>
 
+<button class="btn btn-secondary mt-3" onclick="navigateToVotedUsers()">Voted Users</button>
+<button class="btn btn-success mt-3" onclick="navigateToAddCandidatePage()">Add Candidate Page</button>
+
+<div class="mt-3" id="lastVotedUsername"></div>
+
 <script>
-    document.getElementById("addCandidateForm").addEventListener("submit", function(event) {
-        event.preventDefault();
-        addCandidate();
-    });
 
-    function addCandidate() {
-        var candidateName = document.getElementById("candidateName").value;
-
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-            if (this.readyState === 4 && this.status === 200) {
-                // Update the table content after adding a candidate
-                document.getElementById("candidatesTable").innerHTML = this.responseText;
-            }
-        };
-
-        xhttp.open("POST", "voteSystem", true);
-        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhttp.send("action=addCandidate&candidateName=" + encodeURIComponent(candidateName));
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length === 2) return parts.pop().split(";").shift();
     }
+
+
+
 
     function deleteCandidate(candidateName) {
         var xhttp = new XMLHttpRequest();
@@ -56,12 +54,18 @@
     }
 
     function vote(candidateName) {
-        var username = document.getElementById("username").value; // Get the username value
+        var username = document.getElementById("username").value;
+
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
-            if (this.readyState === 4 && this.status === 200) {
-                // Update the table content after voting
-                document.getElementById("candidatesTable").innerHTML = this.responseText;
+            if (this.readyState === 4) {
+                if (this.status === 200) {
+                    // Update the table content after voting
+                    document.getElementById("candidatesTable").innerHTML = this.responseText;
+                } else if (this.status === 403) {
+                    // Show modal if the user has already voted
+                    $('#alreadyVotedModal').modal('show');
+                }
             }
         };
 
@@ -86,7 +90,42 @@
     // Load the initial table content when the page loads
     window.onload = function() {
         getTable();
+        var lastVotedUsername = getCookie("lastVotedUsername");
+        if (lastVotedUsername) {
+            document.getElementById("lastVotedUsername").innerText = "Last Voted Username: " + lastVotedUsername;
+        }
     };
+
+    function navigateToVotedUsers() {
+        window.location.href = "votedUsers.html";
+    }
+
+    function navigateToAddCandidatePage() {
+        window.location.href = "addCandidatePage.jsp";
+    }
+
 </script>
+
+
+<!-- Modal for already voted -->
+<div class="modal fade" id="alreadyVotedModal" tabindex="-1" role="dialog" aria-labelledby="alreadyVotedModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alreadyVotedModalLabel">Already Voted</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>You have already voted. Each user is allowed to vote only once.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

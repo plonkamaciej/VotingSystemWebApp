@@ -13,7 +13,7 @@ public class FileManager {
     /**
      * user file
      */
-    private static final File userFile = new File("../pl/polsl/lab1/votesystem/fileMenager/Users.txt");
+    private static final File userFile = new File("/Users/maciejmac/Downloads/WebLab3/src/main/java/pl/polsl/lab1/votesystem/fileMenager/Users.txt");
 
 
     /**
